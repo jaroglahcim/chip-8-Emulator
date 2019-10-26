@@ -1,6 +1,16 @@
 #include "chip8.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
+#include<windows.h>
+
+void gotoxy(int x, int y)
+{
+	COORD c;
+	c.X = x - 1;
+	c.Y = y - 1;
+	SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), c);
+}
 
 chip8::chip8()
 {
@@ -41,14 +51,13 @@ void chip8::initialize()
 		V[i] = 0;
 	for (int i = 0; i < MEMORY_SIZE; ++i)									// Clear memory
 		memory[i] = 0;
-
-	// Load fontset
-	for (int i = 0; i < 80; ++i)
+	for (int i = 0; i < 80; ++i)											// Load fontset
 		memory[i + FONTSET_START] = chip8_fontset[i];
 
-	// Reset timers
-	delay_timer = 0;
+	delay_timer = 0;														// Reset timers
 	sound_timer = 0;
+
+	srand((unsigned int) time(NULL));														// Reset time (used for rand for opcode emulation)
 }
 void chip8::emulateCycle()
 {
@@ -73,7 +82,7 @@ void chip8::emulateCycle()
 					break;
 
 				default:
-					printf("Unknown opcode 0x%X\n", opcode);				// Unsupported opcode if starts with four zeroes (bites) and
+					fprintf(stderr, "Unknown opcode 0x%X\n", opcode);		// Unsupported opcode if starts with four zeroes (bites) and
 					pc += 2;												// not one of the two opcodes above
 				break;
 			}
@@ -109,7 +118,7 @@ void chip8::emulateCycle()
 																			// (Usually the next instruction is a jump to skip a code block)
 			if ((opcode & 0x000F) != 0)
 			{
-				printf("Unknown opcode 0x%X\n", opcode);					// Unsupported opcode if last 4 bites not 0
+				fprintf(stderr, "Unknown opcode 0x%X\n", opcode);			// Unsupported opcode if last 4 bites not 0
 				pc += 2;
 				break;
 			}
@@ -213,7 +222,7 @@ void chip8::emulateCycle()
 				break;
 
 				default:
-					printf("Unknown opcode 0x%X\n", opcode);				// Unsupported opcode if last four bites differ from specified before
+					fprintf(stderr, "Unknown opcode 0x%X\n", opcode);		// Unsupported opcode if last four bites differ from specified before
 					pc += 2;
 				break;
 
@@ -224,7 +233,7 @@ void chip8::emulateCycle()
 																			// (Usually the next instruction is a jump to skip a code block)
 			if ((opcode & 0x000F) != 0)
 			{
-				printf("Unknown opcode 0x%X\n", opcode);					// Unsupported opcode if last 4 bites not 0
+				fprintf(stderr, "Unknown opcode 0x%X\n", opcode);			// Unsupported opcode if last 4 bites not 0
 				pc += 2;
 				break;
 			}
@@ -257,7 +266,7 @@ void chip8::emulateCycle()
 
 			unsigned char xStart = V[(opcode & 0x0F00) >> 8];
 			unsigned char yStart = V[(opcode & 0x00F0) >> 4];
-			unsigned char height = V[(opcode & 0x000F)];
+			unsigned char height = opcode & 0x000F;
 			unsigned char pixels;
 
 			V[0xF] = 0;
@@ -269,8 +278,8 @@ void chip8::emulateCycle()
 				{
 					if ((pixels & (0x80 >> xLine)) != 0)					// if pixels' (7 - xLine)th bit is 1 <=> to be drawn bit is 1
 					{
-						if (gfx[(yStart + yLine) * SCREEN_WIDTH				// if checked bit on screen is 1 
-							+ (xStart + xLine)] == 1);
+						if (gfx[(yStart + yLine) * SCREEN_WIDTH	+ 			// if checked bit on screen is 1
+							 (xStart + xLine)] == 1)
 						{
 							V[0xF] = 1;										// both bits 1, collision on screen
 						}
@@ -376,7 +385,7 @@ void chip8::emulateCycle()
 		break;
 
 		default:															
-			printf("Unknown opcode 0x%X\n", opcode);						// Unsupported opcode
+			fprintf(stderr, "Unknown opcode 0x%X\n", opcode);				// Unsupported opcode
 			pc += 2;
 		break;
 	}
@@ -391,3 +400,64 @@ void chip8::emulateCycle()
 	}
 
 }
+
+void chip8::debugRender()													//for testing only
+{
+	// Draw
+	//system("CLS");
+	gotoxy(0, 0);
+	for (int y = 0; y < 32; ++y)
+	{
+		for (int x = 0; x < 64; ++x)
+		{
+			if (gfx[(y * 64) + x] == 0)
+				printf(" ");
+			else
+				printf("#");
+		}
+		printf("\n");
+	}
+	printf("\n");
+}
+
+bool chip8::loadGame(const char* filename)
+{
+	printf("Loading: %s\n", filename);
+
+	FILE* f;
+	fopen_s(&f, filename, "rb");											// Open file
+	if (f == NULL)
+	{
+		fprintf(stderr, "Error loading file.\n");
+		return false;
+	}
+
+	fseek(f, 0L, SEEK_END);													// Check file size - position indicator used in fseek keeps track of 
+																			// how many bytes it went through, ergo contains size of the file.
+	long size = ftell(f);													// we find out its value through ftell																
+	fseek(f, 0L, SEEK_SET);													// set the position indicator back to the beginning of the file
+	
+	if (size > MEMORY_SIZE - PROGRAM_ROM_START)
+	{
+		fprintf(stderr, "ROM is too big for CHIP-8 memory.\n");
+		return false;
+	}
+	char* buffer = (char*)malloc(size);										// allocating memory
+	if (buffer == NULL)
+	{
+		fprintf(stderr, "Error allocating memory.\n");
+		return false;
+	}
+	if (fread(buffer, 1, size, f) != size)									// Storing data from stream to allocated memory buffer
+	{
+		fprintf(stderr, "Error reading from memory.\n");
+		return false;
+	}
+	for (int i = 0; i < size; ++i)											// Storing data in emulated CHIP-8 memory
+		memory[i + PROGRAM_ROM_START] = buffer[i];
+	
+	fclose(f);																// Closing file, freeing memory from buffer
+	free(buffer);
+	return true;
+}
+

@@ -10,23 +10,22 @@ int main(int argc, char** argv) {
 
 	// Initialize the Chip8 system and load the game into the memory  
 	myChip8.initialize();
-	//myChip8.loadGame("pong");
+	//myChip8.loadGame("pong2.c8");
+	myChip8.loadGame(argv[1]);
 
 	// Emulation loop
-	//printf("%s\n", argv[0]);
-	//printf("%s\n", argv[1]);
 	for (;;)
 	{
 		// Emulate one cycle
 		myChip8.emulateCycle();
 
 		// If the draw flag is set, update the screen
-		//if (myChip8.drawFlag)
-		//	drawGraphics();
+		if (myChip8.drawFlag)
+			myChip8.debugRender();		//drawGraphics();
 
 		// Store key press state (Press and Release)
 		//myChip8.setKeys();
-		break;
+		myChip8.drawFlag = false;
 	}
 
 	return 0;
