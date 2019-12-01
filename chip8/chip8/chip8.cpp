@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
-#include<windows.h>
+#include <windows.h>
 
 void gotoxy(int x, int y)
 {
@@ -12,10 +12,11 @@ void gotoxy(int x, int y)
 	SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), c);
 }
 
-chip8::chip8()
+Chip8::Chip8()
 {
 	// empty
 }
+
 const unsigned char chip8_fontset[80] =
 {
   0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
@@ -36,7 +37,7 @@ const unsigned char chip8_fontset[80] =
   0xF0, 0x80, 0xF0, 0x80, 0x80  // F
 };
 
-void chip8::initialize()
+void Chip8::initialize()
 {
 	pc = 0x200;																// Program counter starts at 0x200
 	opcode = 0;																// Reset current opcode	
@@ -57,9 +58,10 @@ void chip8::initialize()
 	delay_timer = 0;														// Reset timers
 	sound_timer = 0;
 
-	srand((unsigned int) time(NULL));														// Reset time (used for rand for opcode emulation)
+	srand((unsigned int) time(NULL));										// Reset time (used for rand for opcode emulation)
 }
-void chip8::emulateCycle()
+
+void Chip8::emulateCycle()
 {
 	opcode = memory[pc] << 8 | memory[pc + 1];								// Fetch opcode from memory
 	
@@ -389,7 +391,10 @@ void chip8::emulateCycle()
 			pc += 2;
 		break;
 	}
+}
 
+void Chip8::timersTick()
+{
 	if (delay_timer > 0)													// update delay timer
 		--delay_timer;
 	if (sound_timer > 0)													// update sound timer
@@ -401,7 +406,7 @@ void chip8::emulateCycle()
 
 }
 
-void chip8::debugRender()													//for testing only
+void Chip8::debugRender()													//for testing only
 {
 	// Draw
 	//system("CLS");
@@ -420,7 +425,7 @@ void chip8::debugRender()													//for testing only
 	printf("\n");
 }
 
-bool chip8::loadGame(const char* filename)
+bool Chip8::loadGame(const char* filename)
 {
 	printf("Loading: %s\n", filename);
 

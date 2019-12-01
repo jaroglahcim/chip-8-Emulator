@@ -1,5 +1,6 @@
 #define SCREEN_SIZE 64 * 32
 #define SCREEN_WIDTH 64
+#define SCREEN_HEIGHT 32
 #define MEMORY_SIZE 4096
 #define STACK_SIZE 16
 #define NR_OF_REGISTERS 16
@@ -11,13 +12,13 @@
 	0x200 - 0xFFF - Program ROM and work RAM */
 #define FONTSET_START 0x50
 #define PROGRAM_ROM_START 0x200
-class chip8 {
+class Chip8 {
 	public:
-		chip8();
+		Chip8();
 		void initialize();
 		bool loadGame(const char* filename);
 		void emulateCycle();
-		void setKeys();
+		void timersTick();
 		void debugRender();
 		
 		bool drawFlag;
@@ -40,3 +41,4 @@ class chip8 {
 		unsigned char sound_timer;			//timer used for sound effects
 
 };
+
