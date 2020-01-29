@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string>
 #include "chip8.h"
 #include "SDL.h"
 
@@ -78,6 +79,7 @@ void handleInput()
 					case SDLK_x: myChip8.key[0x0] = 1; break;
 					case SDLK_c: myChip8.key[0xB] = 1; break;
 					case SDLK_v: myChip8.key[0xF] = 1; break;
+					case SDLK_ESCAPE: myDisplay->quit = true; break;
 				}
 				//printf("Key press detected\n");
 				break;
@@ -134,7 +136,7 @@ void drawGraphics()
 }
 
 void emulationFrame() {
-	// Emulate one cycle
+	// Emulate 9 cycles - approximate amount of instructions for one frame
 	for(int cycles = 0; cycles < 9; cycles++)
 		myChip8.emulateCycle();
 	// If the draw flag is set, update the screen
@@ -151,22 +153,29 @@ void emulationFrame() {
 }
 
 int main(int argc, char** argv) {
-	myDisplay = new Display(10);
-	// Set up render system and register input callbacks
-	setupGraphics();
-	//setupInput();
-
 	// Initialize the Chip8 system and load the game into the memory  
-	myChip8.initialize();                                              //myChip8.loadGame("pong2.c8");
+	myChip8.initialize();
 	if (argc < 2)
 	{
 		fprintf(stderr, "No file specified.\n");
 		return 1;
 	}
 	myChip8.loadGame(argv[1]);
+
+	int resolutionModifier = 10;
+	if (argc > 2)
+		resolutionModifier = std::stoi(argv[2]);
+	if (resolutionModifier < 1 && resolutionModifier > 50)
+		resolutionModifier = 10;
+	myDisplay = new Display(resolutionModifier);
+
+	// Set up render system and register input callbacks
+	setupGraphics();
+
+
 	int frameStart, frameTime, frameDelay = 1000 / 60;
 	// Emulation loop
-	for (;!(myDisplay->quit);)
+	while (!(myDisplay->quit))
 	{
 		frameStart = SDL_GetTicks();
 		emulationFrame();

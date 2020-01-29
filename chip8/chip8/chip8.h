@@ -5,7 +5,6 @@
 #define STACK_SIZE 16
 #define NR_OF_REGISTERS 16
 #define NR_OF_KEYS 16
-//#define VX V[(opcode & 0x0F00) >> 8]
 /*	Memory map
 	0x000 - 0x1FF - Chip 8 interpreter(contains font set in emu)
 	0x050 - 0x0A0 - Used for the built in 4x5 pixel font set(0 - F)
